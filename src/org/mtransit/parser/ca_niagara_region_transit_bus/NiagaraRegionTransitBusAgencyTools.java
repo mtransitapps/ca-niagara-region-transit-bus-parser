@@ -73,10 +73,10 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public boolean excludeRoute(GRoute gRoute) {
-		if (!NIAGARA_REGION_TRANSIT_AGENCY_ID.equals(gRoute.agency_id)) {
+		if (!NIAGARA_REGION_TRANSIT_AGENCY_ID.equals(gRoute.getAgencyId())) {
 			return true;
 		}
-		if (gRoute.route_id.startsWith(EXCLUDE_STC_ROUTE_IDS_STARTS_WITH)) {
+		if (gRoute.getRouteId().startsWith(EXCLUDE_STC_ROUTE_IDS_STARTS_WITH)) {
 			return true;
 		}
 		return super.excludeRoute(gRoute);
@@ -89,8 +89,8 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public long getRouteId(GRoute gRoute) {
-		if (gRoute.route_short_name != null && gRoute.route_short_name.length() > 0 && Utils.isDigitsOnly(gRoute.route_short_name)) {
-			return Long.parseLong(gRoute.route_short_name);
+		if (gRoute.getRouteShortName() != null && gRoute.getRouteShortName().length() > 0 && Utils.isDigitsOnly(gRoute.getRouteShortName())) {
+			return Long.parseLong(gRoute.getRouteShortName());
 		}
 		System.out.printf("\nUnexpected route ID for %s!\n", gRoute);
 		System.exit(-1);
@@ -101,7 +101,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public String getRouteLongName(GRoute gRoute) {
-		String routeLongName = gRoute.route_long_name;
+		String routeLongName = gRoute.getRouteLongName();
 		routeLongName = ENDS_WITH_CT.matcher(routeLongName).replaceAll(StringUtils.EMPTY);
 		routeLongName = CleanUtils.removePoints(routeLongName);
 		return routeLongName;
@@ -121,7 +121,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public String getRouteColor(GRoute gRoute) {
-		int rsn = Integer.parseInt(gRoute.route_short_name);
+		int rsn = Integer.parseInt(gRoute.getRouteShortName());
 		switch (rsn) {
 		// @formatter:off
 		case 50: return COLOR_F15A22;
@@ -144,7 +144,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public void setTripHeadsign(MRoute mRoute, MTrip mTrip, GTrip gTrip, GSpec gtfs) {
-		String tripHeadsign = gTrip.trip_headsign;
+		String tripHeadsign = gTrip.getTripHeadsign();
 		int rsn = Integer.parseInt(mRoute.shortName);
 		switch (rsn) {
 		// @formatter:off
@@ -159,7 +159,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			System.out.printf("\nUnexpected trip %s!\n", gTrip);
 			System.exit(-1);
 		}
-		int directionId = gTrip.direction_id == null ? 0 : gTrip.direction_id;
+		int directionId = gTrip.getDirectionId() == null ? 0 : gTrip.getDirectionId();
 		mTrip.setHeadsignString(cleanTripHeadsign(tripHeadsign), directionId);
 	}
 
@@ -195,42 +195,42 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public int getStopId(GStop gStop) {
-		if (Utils.isDigitsOnly(gStop.stop_id)) {
-			return Integer.parseInt(gStop.stop_id);
+		if (Utils.isDigitsOnly(gStop.getStopId())) {
+			return Integer.parseInt(gStop.getStopId());
 		}
 		int indexOf;
 		String stopIdS;
-		indexOf = gStop.stop_id.indexOf(NFWE);
+		indexOf = gStop.getStopId().indexOf(NFWE);
 		if (indexOf >= 0) {
-			stopIdS = gStop.stop_id.substring(indexOf + NFWE.length());
+			stopIdS = gStop.getStopId().substring(indexOf + NFWE.length());
 			if (Utils.isDigitsOnly(stopIdS)) {
 				return 100000 + Integer.parseInt(stopIdS);
 			}
 		}
-		indexOf = gStop.stop_id.indexOf(NF);
+		indexOf = gStop.getStopId().indexOf(NF);
 		if (indexOf >= 0) {
-			stopIdS = gStop.stop_id.substring(indexOf + NF.length());
+			stopIdS = gStop.getStopId().substring(indexOf + NF.length());
 			if (Utils.isDigitsOnly(stopIdS)) {
 				return 200000 + Integer.parseInt(stopIdS);
 			}
 		}
-		indexOf = gStop.stop_id.indexOf(WESC);
+		indexOf = gStop.getStopId().indexOf(WESC);
 		if (indexOf >= 0) {
-			stopIdS = gStop.stop_id.substring(indexOf + WESC.length());
+			stopIdS = gStop.getStopId().substring(indexOf + WESC.length());
 			if (Utils.isDigitsOnly(stopIdS)) {
 				return 300000 + Integer.parseInt(stopIdS);
 			}
 		}
-		indexOf = gStop.stop_id.indexOf(WE);
+		indexOf = gStop.getStopId().indexOf(WE);
 		if (indexOf >= 0) {
-			stopIdS = gStop.stop_id.substring(indexOf + WE.length());
+			stopIdS = gStop.getStopId().substring(indexOf + WE.length());
 			if (Utils.isDigitsOnly(stopIdS)) {
 				return 3400000 + Integer.parseInt(stopIdS);
 			}
 		}
-		indexOf = gStop.stop_id.indexOf(NOTL);
+		indexOf = gStop.getStopId().indexOf(NOTL);
 		if (indexOf >= 0) {
-			stopIdS = gStop.stop_id.substring(indexOf + NOTL.length());
+			stopIdS = gStop.getStopId().substring(indexOf + NOTL.length());
 			if (Utils.isDigitsOnly(stopIdS)) {
 				return 500000 + Integer.parseInt(stopIdS);
 			}
