@@ -145,7 +145,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@Override
 	public void setTripHeadsign(MRoute mRoute, MTrip mTrip, GTrip gTrip, GSpec gtfs) {
 		String tripHeadsign = gTrip.getTripHeadsign();
-		int rsn = Integer.parseInt(mRoute.shortName);
+		int rsn = Integer.parseInt(mRoute.getShortName());
 		switch (rsn) {
 		// @formatter:off
 		case 50: tripHeadsign = ST_CATHARINES; break;
