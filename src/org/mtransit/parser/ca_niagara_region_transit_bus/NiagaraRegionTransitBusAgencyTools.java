@@ -2,6 +2,7 @@ package org.mtransit.parser.ca_niagara_region_transit_bus;
 
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -87,10 +88,21 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return MAgency.ROUTE_TYPE_BUS;
 	}
 
+	private static final String A = "A";
+
+	private static final Pattern DIGITS = Pattern.compile("[\\d]+");
+
 	@Override
 	public long getRouteId(GRoute gRoute) {
 		if (gRoute.getRouteShortName() != null && gRoute.getRouteShortName().length() > 0 && Utils.isDigitsOnly(gRoute.getRouteShortName())) {
 			return Long.parseLong(gRoute.getRouteShortName());
+		}
+		Matcher matcher = DIGITS.matcher(gRoute.getRouteId());
+		if (matcher.find()) {
+			long id = Long.parseLong(matcher.group());
+			if (gRoute.getRouteShortName().endsWith(A)) {
+				return 10000l + id;
+			}
 		}
 		System.out.printf("\nUnexpected route ID for %s!\n", gRoute);
 		System.exit(-1);
@@ -121,16 +133,21 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public String getRouteColor(GRoute gRoute) {
-		int rsn = Integer.parseInt(gRoute.getRouteShortName());
-		switch (rsn) {
-		// @formatter:off
-		case 50: return COLOR_F15A22;
-		case 55: return COLOR_F15A22;
-		case 60: return COLOR_007AC2;
-		case 65: return COLOR_007AC2;
-		case 70: return null; // agency color
-		case 75: return null; // agency color
-		// @formatter:on
+		Matcher matcher = DIGITS.matcher(gRoute.getRouteId());
+		if (matcher.find()) {
+			int id = Integer.parseInt(matcher.group());
+			switch (id) {
+			// @formatter:off
+			case 40: return null; // agency color
+			case 45: return null; // agency color
+			case 50: return COLOR_F15A22;
+			case 55: return COLOR_F15A22;
+			case 60: return COLOR_007AC2;
+			case 65: return COLOR_007AC2;
+			case 70: return null; // agency color
+			case 75: return null; // agency color
+			// @formatter:on
+			}
 		}
 		System.out.printf("\nUnexpected route long name for %s!\n", gRoute);
 		System.exit(-1);
@@ -145,19 +162,24 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@Override
 	public void setTripHeadsign(MRoute mRoute, MTrip mTrip, GTrip gTrip, GSpec gtfs) {
 		String tripHeadsign = gTrip.getTripHeadsign();
-		int rsn = Integer.parseInt(mRoute.getShortName());
-		switch (rsn) {
-		// @formatter:off
-		case 50: tripHeadsign = ST_CATHARINES; break;
-		case 55: tripHeadsign = NIAGARA_FALLS; break;
-		case 60: tripHeadsign = WELLAND; break;
-		case 65: tripHeadsign = NIAGARA_FALLS; break;
-		case 70: tripHeadsign = WELLAND; break;
-		case 75: tripHeadsign = ST_CATHARINES; break;
-		// @formatter:on
-		default:
-			System.out.printf("\nUnexpected trip %s!\n", gTrip);
-			System.exit(-1);
+		Matcher matcher = DIGITS.matcher(mRoute.getShortName());
+		if (matcher.find()) {
+			int rsn = Integer.parseInt(matcher.group());
+			switch (rsn) {
+			// @formatter:off
+			case 40: tripHeadsign = ST_CATHARINES; break;
+			case 45: tripHeadsign = NIAGARA_FALLS; break;
+			case 50: tripHeadsign = ST_CATHARINES; break;
+			case 55: tripHeadsign = NIAGARA_FALLS; break;
+			case 60: tripHeadsign = WELLAND; break;
+			case 65: tripHeadsign = NIAGARA_FALLS; break;
+			case 70: tripHeadsign = WELLAND; break;
+			case 75: tripHeadsign = ST_CATHARINES; break;
+			// @formatter:on
+			default:
+				System.out.printf("\nUnexpected trip %s!\n", gTrip);
+				System.exit(-1);
+			}
 		}
 		int directionId = gTrip.getDirectionId() == null ? 0 : gTrip.getDirectionId();
 		mTrip.setHeadsignString(cleanTripHeadsign(tripHeadsign), directionId);
