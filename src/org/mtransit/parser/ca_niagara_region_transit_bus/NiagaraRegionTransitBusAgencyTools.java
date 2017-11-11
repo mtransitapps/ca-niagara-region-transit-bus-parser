@@ -20,6 +20,7 @@ import org.mtransit.parser.mt.data.MRoute;
 import org.mtransit.parser.mt.data.MTrip;
 
 // http://www.niagararegion.ca/government/opendata/data-set.aspx#id=32
+// https://maps.niagararegion.ca/googletransit/NiagaraRegionTransit.zip
 // http://maps-dev.niagararegion.ca/GoogleTransit/NiagaraRegionTransit.zip
 // https://www.niagararegion.ca/downloads/transit/NiagaraRegionTransit.zip
 public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
@@ -155,7 +156,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return null;
 	}
 
-
 	private static final String NIAGARA_FALLS = "Niagara Falls";
 	private static final String WELLAND = "Welland";
 	private static final String ST_CATHARINES = "St Catharines";
@@ -220,6 +220,9 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	public int getStopId(GStop gStop) {
 		if (Utils.isDigitsOnly(gStop.getStopId())) {
 			return Integer.parseInt(gStop.getStopId());
+		}
+		if ("NFST1".equalsIgnoreCase(gStop.getStopId())) {
+			return 9000000;
 		}
 		int indexOf;
 		String stopIdS;
