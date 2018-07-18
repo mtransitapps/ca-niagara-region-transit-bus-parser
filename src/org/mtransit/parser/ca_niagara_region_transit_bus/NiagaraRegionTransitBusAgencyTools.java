@@ -21,8 +21,6 @@ import org.mtransit.parser.mt.data.MTrip;
 
 // http://www.niagararegion.ca/government/opendata/data-set.aspx#id=32
 // https://maps.niagararegion.ca/googletransit/NiagaraRegionTransit.zip
-// http://maps-dev.niagararegion.ca/GoogleTransit/NiagaraRegionTransit.zip
-// https://www.niagararegion.ca/downloads/transit/NiagaraRegionTransit.zip
 public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	public static void main(String[] args) {
@@ -44,6 +42,11 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		this.serviceIds = extractUsefulServiceIds(args, this, true);
 		super.start(args);
 		System.out.printf("\nGenerating Niagara Region Transit bus data... DONE in %s.\n", Utils.getPrettyDuration(System.currentTimeMillis() - start));
+	}
+
+	@Override
+	public boolean excludingAll() {
+		return this.serviceIds != null && this.serviceIds.isEmpty();
 	}
 
 	@Override
