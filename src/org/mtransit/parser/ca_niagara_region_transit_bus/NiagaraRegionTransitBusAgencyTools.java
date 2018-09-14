@@ -73,7 +73,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return super.excludeTrip(gTrip);
 	}
 
-	private static final String NIAGARA_REGION_TRANSIT_AGENCY_ID = "NR";
+	private static final String NIAGARA_REGION_TRANSIT_AGENCY_ID = "NRT_F18_Niagara Region Transit";
 
 	private static final String EXCLUDE_STC_ROUTE_IDS_STARTS_WITH = "STC_";
 
@@ -114,11 +114,13 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return -1l;
 	}
 
+	private static final Pattern STARTS_WITH_CT = Pattern.compile("(^(NRT \\- ))", Pattern.CASE_INSENSITIVE);
 	private static final Pattern ENDS_WITH_CT = Pattern.compile("( (nf|sc|we)$)", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public String getRouteLongName(GRoute gRoute) {
 		String routeLongName = gRoute.getRouteLongName();
+		routeLongName = STARTS_WITH_CT.matcher(routeLongName).replaceAll(StringUtils.EMPTY);
 		routeLongName = ENDS_WITH_CT.matcher(routeLongName).replaceAll(StringUtils.EMPTY);
 		routeLongName = CleanUtils.removePoints(routeLongName);
 		return routeLongName;
@@ -133,28 +135,25 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return AGENCY_COLOR;
 	}
 
-	private static final String COLOR_F15A22 = "F15A22";
-	private static final String COLOR_007AC2 = "007AC2";
-
 	@Override
 	public String getRouteColor(GRoute gRoute) {
-		Matcher matcher = DIGITS.matcher(gRoute.getRouteId());
+		Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
 		if (matcher.find()) {
 			int id = Integer.parseInt(matcher.group());
 			switch (id) {
 			// @formatter:off
-			case 40: return null; // agency color
-			case 45: return null; // agency color
-			case 50: return COLOR_F15A22;
-			case 55: return COLOR_F15A22;
-			case 60: return COLOR_007AC2;
-			case 65: return COLOR_007AC2;
-			case 70: return null; // agency color
-			case 75: return null; // agency color
+			case 40: return "1B5C28";
+			case 45: return "1B5C28";
+			case 50: return "F1471C";
+			case 55: return "F1471C";
+			case 60: return "1378C7";
+			case 65: return "1378C7";
+			case 70: return "62B92C";
+			case 75: return "62B92C";
 			// @formatter:on
 			}
 		}
-		System.out.printf("\nUnexpected route long name for %s!\n", gRoute);
+		System.out.printf("\nUnexpected route color for %s!\n", gRoute);
 		System.exit(-1);
 		return null;
 	}
@@ -213,56 +212,73 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return CleanUtils.cleanLabel(gStopName);
 	}
 
-	private static final String NFWE = "NFWE";
-	private static final String NF = "NF";
-	private static final String WESC = "WESC";
-	private static final String WE = "WE";
-	private static final String NOTL = "NOTL";
+	@Override
+	public String getStopCode(GStop gStop) {
+		if (ZERO_0.equals(gStop.getStopCode())) {
+			return null;
+		}
+		return super.getStopCode(gStop);
+	}
+
+	private static final String ZERO_0 = "0";
+	private static final Pattern PRE_STOP_ID = Pattern.compile("(" //
+			+ "NRT_[F|S|W][0-9]{2,4}_Stop|" //
+			+ "NRT_[F|S|W][0-9]{2,4}Stop|" //
+			+ "NRT_[F|S|W][0-9]{2,4}_|" //
+			+ "NRT_[F|S|W][0-9]{2,4}|" //
+			+ "NRT_[F|S|W]Stop|" //
+			+ "NRT_[F|S|W]_Stop|" //
+			//
+			+ "NRT_[F|S|W]_[0-9]{2,4}_Stop|" //
+			+ "NRT_[F|S|W]_[0-9]{2,4}_|" //
+			//
+			+ "NRT_[F|S|W]_|" //
+			+ "NRT_[F|S|W]|" //
+			//
+			+ "[F|S|W][0-9]{4}_Stop|" //
+			+ "[F|S|W][0-9]{4}_|" //
+			//
+			+ "Sto" //
+			+ ")", //
+			Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public int getStopId(GStop gStop) {
-		if (Utils.isDigitsOnly(gStop.getStopId())) {
-			return Integer.parseInt(gStop.getStopId());
+		String stopCode = gStop.getStopCode();
+		if (stopCode == null || stopCode.length() == 0 || ZERO_0.equals(stopCode)) {
+			stopCode = gStop.getStopId();
 		}
-		if ("NFST1".equalsIgnoreCase(gStop.getStopId())) {
-			return 9000000;
+		stopCode = PRE_STOP_ID.matcher(stopCode).replaceAll(StringUtils.EMPTY);
+		if (Utils.isDigitsOnly(stopCode)) {
+			return Integer.parseInt(stopCode); // using stop code as stop ID
 		}
-		int indexOf;
-		String stopIdS;
-		indexOf = gStop.getStopId().indexOf(NFWE);
-		if (indexOf >= 0) {
-			stopIdS = gStop.getStopId().substring(indexOf + NFWE.length());
-			if (Utils.isDigitsOnly(stopIdS)) {
-				return 100000 + Integer.parseInt(stopIdS);
-			}
+		if (stopCode.equals("DTT")) {
+			return 100_000;
+		} else if (stopCode.equals("NFT")) {
+			return 100_001;
+		} else if (stopCode.equals("PEN")) {
+			return 100_002;
+		} else if (stopCode.equals("SWM")) {
+			return 100_003;
+		} else if (stopCode.equals("WEL")) {
+			return 100004;
+		} else if (stopCode.equals("BRU")) {
+			return 100_006;
+		} else if (stopCode.equals("FVM")) {
+			return 100_008;
+		} else if (stopCode.equals("GDC")) {
+			return 100_020;
+		} else if (stopCode.equals("WLC")) {
+			return 100_021;
+		} else if (stopCode.equals("CTO")) {
+			return 100_035;
+		} else if (stopCode.equals("OUT")) {
+			return 100_044;
 		}
-		indexOf = gStop.getStopId().indexOf(NF);
-		if (indexOf >= 0) {
-			stopIdS = gStop.getStopId().substring(indexOf + NF.length());
-			if (Utils.isDigitsOnly(stopIdS)) {
-				return 200000 + Integer.parseInt(stopIdS);
-			}
-		}
-		indexOf = gStop.getStopId().indexOf(WESC);
-		if (indexOf >= 0) {
-			stopIdS = gStop.getStopId().substring(indexOf + WESC.length());
-			if (Utils.isDigitsOnly(stopIdS)) {
-				return 300000 + Integer.parseInt(stopIdS);
-			}
-		}
-		indexOf = gStop.getStopId().indexOf(WE);
-		if (indexOf >= 0) {
-			stopIdS = gStop.getStopId().substring(indexOf + WE.length());
-			if (Utils.isDigitsOnly(stopIdS)) {
-				return 3400000 + Integer.parseInt(stopIdS);
-			}
-		}
-		indexOf = gStop.getStopId().indexOf(NOTL);
-		if (indexOf >= 0) {
-			stopIdS = gStop.getStopId().substring(indexOf + NOTL.length());
-			if (Utils.isDigitsOnly(stopIdS)) {
-				return 500000 + Integer.parseInt(stopIdS);
-			}
+		if (stopCode.equals("NiagSqua")) {
+			return 200_000;
+		} else if (stopCode.equals("Concentrix")) {
+			return 200_001;
 		}
 		System.out.printf("\nUnexpected stop ID %s!\n", gStop);
 		System.exit(-1);
