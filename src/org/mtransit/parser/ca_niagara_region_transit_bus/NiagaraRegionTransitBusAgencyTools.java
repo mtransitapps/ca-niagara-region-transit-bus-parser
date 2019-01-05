@@ -1,6 +1,8 @@
 package org.mtransit.parser.ca_niagara_region_transit_bus;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,13 +75,13 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return super.excludeTrip(gTrip);
 	}
 
-	private static final String NIAGARA_REGION_TRANSIT_AGENCY_ID = "NRT_F18_Niagara Region Transit";
+	private static final String NIAGARA_REGION_TRANSIT = "Niagara Region Transit";
 
 	private static final String EXCLUDE_STC_ROUTE_IDS_STARTS_WITH = "STC_";
 
 	@Override
 	public boolean excludeRoute(GRoute gRoute) {
-		if (!NIAGARA_REGION_TRANSIT_AGENCY_ID.equals(gRoute.getAgencyId())) {
+		if (!gRoute.getAgencyId().contains(NIAGARA_REGION_TRANSIT)) {
 			return true;
 		}
 		if (gRoute.getRouteId().startsWith(EXCLUDE_STC_ROUTE_IDS_STARTS_WITH)) {
@@ -106,7 +108,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		if (matcher.find()) {
 			long id = Long.parseLong(matcher.group());
 			if (gRoute.getRouteShortName().endsWith(A)) {
-				return 10000l + id;
+				return 10_000L + id;
 			}
 		}
 		System.out.printf("\nUnexpected route ID for %s!\n", gRoute);
@@ -142,6 +144,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			int id = Integer.parseInt(matcher.group());
 			switch (id) {
 			// @formatter:off
+			case 22: return "766A24";
 			case 40: return "1B5C28";
 			case 45: return "1B5C28";
 			case 50: return "F1471C";
@@ -158,54 +161,141 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return null;
 	}
 
-	private static final String NIAGARA_FALLS = "Niagara Falls";
-	private static final String WELLAND = "Welland";
+	private static final String SPACE = " ";
+
+	private static final String A_ = "A ";
+
+	private static final String NIAGARA = "Niagara";
+	private static final String NIAGARA_COLLEGE = NIAGARA + " College";
+	private static final String NIAGARA_FALLS = NIAGARA + " Falls";
+	private static final String NOTL_CAMPUS = "NOTL Campus";
+	private static final String OUTLET_MALL = "Outlet Mall";
 	private static final String ST_CATHARINES = "St Catharines";
+	private static final String WELLAND = "Welland";
+	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
+
+	public static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile("((^){1}(nrt\\_[A-Z]{1}[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?))",
+			Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public String cleanStopOriginalId(String gStopId) {
+		gStopId = STARTS_WITH_NRT_A00_.matcher(gStopId).replaceAll(StringUtils.EMPTY);
+		return gStopId;
+	}
 
 	@Override
 	public void setTripHeadsign(MRoute mRoute, MTrip mTrip, GTrip gTrip, GSpec gtfs) {
 		String tripHeadsign = gTrip.getTripHeadsign();
-		Matcher matcher = DIGITS.matcher(mRoute.getShortName());
-		if (matcher.find()) {
-			int rsn = Integer.parseInt(matcher.group());
-			switch (rsn) {
-			// @formatter:off
-			case 40: tripHeadsign = ST_CATHARINES; break;
-			case 45: tripHeadsign = NIAGARA_FALLS; break;
-			case 50: tripHeadsign = ST_CATHARINES; break;
-			case 55: tripHeadsign = NIAGARA_FALLS; break;
-			case 60: tripHeadsign = WELLAND; break;
-			case 65: tripHeadsign = NIAGARA_FALLS; break;
-			case 70: tripHeadsign = WELLAND; break;
-			case 75: tripHeadsign = ST_CATHARINES; break;
-			// @formatter:on
-			default:
-				System.out.printf("\nUnexpected trip %s!\n", gTrip);
-				System.exit(-1);
-			}
-		}
 		int directionId = gTrip.getDirectionId() == null ? 0 : gTrip.getDirectionId();
 		mTrip.setHeadsignString(cleanTripHeadsign(tripHeadsign), directionId);
 	}
 
+	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^){1}[\\d]{2}([A-Z]{1} | ))", Pattern.CASE_INSENSITIVE);
+	private static final String STARTS_WITH_RSN_REPLACEMENT = "$3";
+
+	private static final Pattern IMT_ = Pattern.compile("((^|\\W){1}(imt \\-|imt)(\\W|$){1})", Pattern.CASE_INSENSITIVE); // Inter-Municipal Transit
+
+	private static final Pattern STARTS_WITH_TO = Pattern.compile("(([A-Z]{1} )?(.*)( to | \\- |\\- |\\-)(.*))", Pattern.CASE_INSENSITIVE);
+	private static final String STARTS_WITH_TO_REPLACEMENT = "$2$5";
+
+	private static final Pattern ST_CATHARINES_ = Pattern.compile("((^|\\W){1}(" //
+			+ "st\\. catharines" + "|" //
+			+ "st\\. catharine" + "|" //
+			+ "st\\. catharin" + "|" //
+			+ "st\\. cathari" + "|" //
+			+ "st\\. cathar" + "|" //
+			+ "st\\. catha" + "|" //
+			+ "st\\. cath" + "|" //
+			+ "st\\. cat" + "|" //
+			+ "st\\. ca" + "|" //
+			+ "st\\. c" + "|" //
+			+ "st\\. " //
+			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+	private static final String ST_CATHARINES_REPLACEMENT = "$2" + ST_CATHARINES + "$4";
+
+	private static final Pattern NIAGARA_FALLS_ = Pattern.compile("((^|\\W){1}(" //
+			+ "niagara falls" + "|" //
+			+ "niagara fall" + "|" //
+			+ "niag" + "|" //
+			+ "nia\\. falls" + "|" //
+			+ "falls" //
+			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+	private static final String NIAGARA_FALLS_REPLACEMENT = "$2" + NIAGARA_FALLS + "$4";
+
+	private static final Pattern OUTLET_MALL_ = Pattern.compile("((^|\\W){1}(" //
+			+ "outlet mall" + "|" //
+			+ "outlet m" //
+			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+	private static final String OUTLET_MALL_REPLACEMENT = "$2" + OUTLET_MALL + "$4";
+
+	private static final Pattern WELLAND_ = Pattern.compile("((^|\\W){1}(" //
+			+ "welland" + "|" //
+			+ "wellan" //
+			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+	private static final String WELLAND_REPLACEMENT = "$2" + WELLAND + "$4";
+
 	@Override
 	public String cleanTripHeadsign(String tripHeadsign) {
+		tripHeadsign = STARTS_WITH_RSN.matcher(tripHeadsign).replaceAll(STARTS_WITH_RSN_REPLACEMENT);
+		tripHeadsign = IMT_.matcher(tripHeadsign).replaceAll(StringUtils.EMPTY);
+		tripHeadsign = STARTS_WITH_TO.matcher(tripHeadsign).replaceAll(STARTS_WITH_TO_REPLACEMENT);
+		tripHeadsign = ST_CATHARINES_.matcher(tripHeadsign).replaceAll(ST_CATHARINES_REPLACEMENT);
+		tripHeadsign = NIAGARA_FALLS_.matcher(tripHeadsign).replaceAll(NIAGARA_FALLS_REPLACEMENT);
+		tripHeadsign = OUTLET_MALL_.matcher(tripHeadsign).replaceAll(OUTLET_MALL_REPLACEMENT);
+		tripHeadsign = WELLAND_.matcher(tripHeadsign).replaceAll(WELLAND_REPLACEMENT);
 		tripHeadsign = CleanUtils.cleanNumbers(tripHeadsign);
 		tripHeadsign = CleanUtils.cleanStreetTypes(tripHeadsign);
 		return CleanUtils.cleanLabel(tripHeadsign);
 	}
 
-	private static final Pattern AND = Pattern.compile("((^|\\W){1}(and)(\\W|$){1})", Pattern.CASE_INSENSITIVE);
-	private static final String AND_REPLACEMENT = "$2&$4";
-
-	private static final Pattern AT = Pattern.compile("((^|\\W){1}(at)(\\W|$){1})", Pattern.CASE_INSENSITIVE);
-	private static final String AT_REPLACEMENT = "$2/$4";
+	@Override
+	public boolean mergeHeadsign(MTrip mTrip, MTrip mTripToMerge) {
+		List<String> headsignsValues = Arrays.asList(mTrip.getHeadsignValue(), mTripToMerge.getHeadsignValue());
+		if (mTrip.getRouteId() == 40L) {
+			if (Arrays.asList( //
+					A_ + NIAGARA_COLLEGE + SPACE + NOTL_CAMPUS, //
+					ST_CATHARINES //
+					).containsAll(headsignsValues)) {
+				mTrip.setHeadsignString(ST_CATHARINES, mTrip.getHeadsignId());
+				return true;
+			}
+		} else if (mTrip.getRouteId() == 45L) {
+			if (Arrays.asList( //
+					A_ + NIAGARA_FALLS, //
+					NIAGARA_FALLS //
+					).containsAll(headsignsValues)) {
+				mTrip.setHeadsignString(NIAGARA_FALLS, mTrip.getHeadsignId());
+				return true;
+			}
+		} else if (mTrip.getRouteId() == 60L) {
+			if (Arrays.asList( //
+					A_ + WELLAND_CAMPUS, //
+					WELLAND //
+					).containsAll(headsignsValues)) {
+				mTrip.setHeadsignString(WELLAND, mTrip.getHeadsignId());
+				return true;
+			}
+		} else if (mTrip.getRouteId() == 65L) {
+			if (Arrays.asList( //
+					A_ + NIAGARA_FALLS, //
+					NIAGARA_FALLS //
+					).containsAll(headsignsValues)) {
+				mTrip.setHeadsignString(NIAGARA_FALLS, mTrip.getHeadsignId());
+				return true;
+			}
+		}
+		System.out.printf("\nUnexptected trips to merge %s & %s!\n", mTrip, mTripToMerge);
+		System.exit(-1);
+		return false;
+	}
 
 	@Override
 	public String cleanStopName(String gStopName) {
-		gStopName = gStopName.toLowerCase(Locale.ENGLISH);
-		gStopName = AND.matcher(gStopName).replaceAll(AND_REPLACEMENT);
-		gStopName = AT.matcher(gStopName).replaceAll(AT_REPLACEMENT);
+		if (Utils.isUppercaseOnly(gStopName, true, true)) {
+			gStopName = gStopName.toLowerCase(Locale.ENGLISH);
+		}
+		gStopName = CleanUtils.CLEAN_AND.matcher(gStopName).replaceAll(CleanUtils.CLEAN_AND_REPLACEMENT);
+		gStopName = CleanUtils.CLEAN_AT.matcher(gStopName).replaceAll(CleanUtils.CLEAN_AT_REPLACEMENT);
 		gStopName = CleanUtils.removePoints(gStopName);
 		gStopName = CleanUtils.cleanNumbers(gStopName);
 		gStopName = CleanUtils.cleanStreetTypes(gStopName);
@@ -221,26 +311,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	}
 
 	private static final String ZERO_0 = "0";
-	private static final Pattern PRE_STOP_ID = Pattern.compile("(" //
-			+ "NRT_[F|S|W][0-9]{2,4}_Stop|" //
-			+ "NRT_[F|S|W][0-9]{2,4}Stop|" //
-			+ "NRT_[F|S|W][0-9]{2,4}_|" //
-			+ "NRT_[F|S|W][0-9]{2,4}|" //
-			+ "NRT_[F|S|W]Stop|" //
-			+ "NRT_[F|S|W]_Stop|" //
-			//
-			+ "NRT_[F|S|W]_[0-9]{2,4}_Stop|" //
-			+ "NRT_[F|S|W]_[0-9]{2,4}_|" //
-			//
-			+ "NRT_[F|S|W]_|" //
-			+ "NRT_[F|S|W]|" //
-			//
-			+ "[F|S|W][0-9]{4}_Stop|" //
-			+ "[F|S|W][0-9]{4}_|" //
-			//
-			+ "Sto" //
-			+ ")", //
-			Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public int getStopId(GStop gStop) {
@@ -248,14 +318,14 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		if (stopCode == null || stopCode.length() == 0 || ZERO_0.equals(stopCode)) {
 			stopCode = gStop.getStopId();
 		}
-		stopCode = PRE_STOP_ID.matcher(stopCode).replaceAll(StringUtils.EMPTY);
+		stopCode = STARTS_WITH_NRT_A00_.matcher(stopCode).replaceAll(StringUtils.EMPTY);
 		if (Utils.isDigitsOnly(stopCode)) {
 			return Integer.parseInt(stopCode); // using stop code as stop ID
 		}
 		if (stopCode.equals("DTT")) {
 			return 100_000;
-		} else if (stopCode.equals("NFT")) {
-			return 100_001;
+		} else if (stopCode.equals("NFT") || stopCode.equals("NFT6634")) {
+			return 100_001; // 6634?
 		} else if (stopCode.equals("PEN")) {
 			return 100_002;
 		} else if (stopCode.equals("SWM")) {
@@ -279,6 +349,8 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			return 200_000;
 		} else if (stopCode.equals("Concentrix")) {
 			return 200_001;
+		} else if (stopCode.equals("FortErie")) {
+			return 200_002;
 		}
 		System.out.printf("\nUnexpected stop ID %s!\n", gStop);
 		System.exit(-1);
