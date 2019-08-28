@@ -174,7 +174,8 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String WELLAND = "Welland";
 	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
 
-	public static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile("((^){1}(nrt\\_[A-Z]{1}[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?))",
+	public static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
+			"((^){1}(nrt\\_[A-Z]{1}[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
 			Pattern.CASE_INSENSITIVE);
 
 	@Override
@@ -319,13 +320,18 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			stopCode = gStop.getStopId();
 		}
 		stopCode = STARTS_WITH_NRT_A00_.matcher(stopCode).replaceAll(StringUtils.EMPTY);
+		if (stopCode.isEmpty()) {
+			System.out.printf("\nUnexpected empty stop ID %s!\n", gStop);
+			System.exit(-1);
+			return -1;
+		}
 		if (Utils.isDigitsOnly(stopCode)) {
 			return Integer.parseInt(stopCode); // using stop code as stop ID
 		}
 		if (stopCode.equals("DTT")) {
 			return 100_000;
-		} else if (stopCode.equals("NFT") || stopCode.equals("NFT6634")) {
-			return 100_001; // 6634?
+		} else if (stopCode.equals("NFT")) {
+			return 100_001;
 		} else if (stopCode.equals("PEN")) {
 			return 100_002;
 		} else if (stopCode.equals("SWM")) {
@@ -344,6 +350,8 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			return 100_035;
 		} else if (stopCode.equals("OUT")) {
 			return 100_044;
+		} else if (stopCode.equals("MCC")) {
+			return 100_045;
 		}
 		if (stopCode.equals("NiagSqua")) {
 			return 200_000;
