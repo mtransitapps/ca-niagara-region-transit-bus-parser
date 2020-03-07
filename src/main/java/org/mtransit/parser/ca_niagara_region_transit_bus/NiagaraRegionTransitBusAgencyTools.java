@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mtransit.parser.CleanUtils;
 import org.mtransit.parser.DefaultAgencyTools;
 import org.mtransit.parser.Utils;
@@ -306,7 +307,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@Override
 	public String getStopCode(GStop gStop) {
 		if (ZERO_0.equals(gStop.getStopCode())) {
-			return null;
+			return StringUtils.EMPTY; // no stop code
 		}
 		return super.getStopCode(gStop);
 	}
