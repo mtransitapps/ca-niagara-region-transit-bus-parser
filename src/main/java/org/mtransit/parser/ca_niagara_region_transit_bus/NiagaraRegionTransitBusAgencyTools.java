@@ -176,7 +176,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
 
 	public static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
-			"((^){1}(nrt\\_([A-Z]{1})?[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
+			"((^){1}(nrt\\_([A-Z]{1,3})?[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
 			Pattern.CASE_INSENSITIVE);
 
 	@Override
