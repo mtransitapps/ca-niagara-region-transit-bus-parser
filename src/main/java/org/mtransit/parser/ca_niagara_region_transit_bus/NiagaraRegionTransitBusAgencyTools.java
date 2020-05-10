@@ -146,6 +146,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			switch (id) {
 			// @formatter:off
 			case 22: return "766A24";
+			case 25: return "00AAA0"; // Welland Transit?
 			case 40: return "1B5C28";
 			case 45: return "1B5C28";
 			case 50: return "F1471C";
@@ -176,7 +177,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
 
 	public static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
-			"((^){1}(nrt\\_([A-Z]{1,3})?[\\d]{2}(\\_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
+			"((^){1}(nrt\\_([A-Z]{1,3})?[\\d]{2,4}(\\_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
 			Pattern.CASE_INSENSITIVE);
 
 	@Override
@@ -360,6 +361,9 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			return 200_001;
 		} else if (stopCode.equals("FortErie")) {
 			return 200_002;
+		}
+		if (stopCode.equals("PCH")) {
+			return 9_000_016;
 		}
 		System.out.printf("\nUnexpected stop ID %s!\n", gStop);
 		System.exit(-1);
