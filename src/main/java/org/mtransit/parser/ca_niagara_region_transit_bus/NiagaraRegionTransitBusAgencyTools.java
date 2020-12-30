@@ -155,7 +155,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	}
 
 	@Override
-	public String getRouteColor(GRoute gRoute) {
+	public String getRouteColor(@NotNull GRoute gRoute) {
 		Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
 		if (matcher.find()) {
 			int id = Integer.parseInt(matcher.group());
@@ -180,7 +180,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String SPACE = " ";
 
 	private static final String A_ = "A ";
-	private static final String B_ = "B ";
 
 	private static final String NIAGARA = "Niagara";
 	private static final String NIAGARA_COLLEGE = NIAGARA + " College";
@@ -191,7 +190,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String WELLAND = "Welland";
 	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
 
-	private static HashMap<Long, RouteTripSpec> ALL_ROUTE_TRIPS2;
+	private static final HashMap<Long, RouteTripSpec> ALL_ROUTE_TRIPS2;
 	static {
 		HashMap<Long, RouteTripSpec> map2 = new HashMap<>();
 		map2.put(25L, new RouteTripSpec(25L, // SPLITTED BECAUSE same trip head-sign for different direction
@@ -255,12 +254,12 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		mTrip.setHeadsignString(cleanTripHeadsign(tripHeadsign), directionId);
 	}
 
-	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^){1}[\\d]{2}([A-Z]{1} | ))", Pattern.CASE_INSENSITIVE);
+	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^)[\\d]{2}([a-z]{1} | ))", Pattern.CASE_INSENSITIVE);
 	private static final String STARTS_WITH_RSN_REPLACEMENT = "$3";
 
-	private static final Pattern IMT_ = Pattern.compile("((^|\\W){1}(imt \\-|imt)(\\W|$){1})", Pattern.CASE_INSENSITIVE); // Inter-Municipal Transit
+	private static final Pattern IMT_ = Pattern.compile("((^|\\W)(imt \\-|imt)(\\W|$))", Pattern.CASE_INSENSITIVE); // Inter-Municipal Transit
 
-	private static final Pattern ST_CATHARINES_ = Pattern.compile("((^|\\W){1}(" //
+	private static final Pattern ST_CATHARINES_ = Pattern.compile("((^|\\W)(" //
 			+ "st\\. catharines" + "|" //
 			+ "st\\. catharine" + "|" //
 			+ "st\\. catharin" + "|" //
@@ -272,33 +271,33 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			+ "st\\. ca" + "|" //
 			+ "st\\. c" + "|" //
 			+ "st\\. " //
-			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String ST_CATHARINES_REPLACEMENT = "$2" + ST_CATHARINES + "$4";
 
-	private static final Pattern NIAGARA_FALLS_ = Pattern.compile("((^|\\W){1}(" //
+	private static final Pattern NIAGARA_FALLS_ = Pattern.compile("((^|\\W)(" //
 			+ "niagara falls" + "|" //
 			+ "niagara fall" + "|" //
 			+ "niag" + "|" //
 			+ "nia\\. falls" + "|" //
 			+ "falls" //
-			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String NIAGARA_FALLS_REPLACEMENT = "$2" + NIAGARA_FALLS + "$4";
 
-	private static final Pattern OUTLET_MALL_ = Pattern.compile("((^|\\W){1}(" //
+	private static final Pattern OUTLET_MALL_ = Pattern.compile("((^|\\W)(" //
 			+ "outlet mall" + "|" //
 			+ "outlet m" //
-			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String OUTLET_MALL_REPLACEMENT = "$2" + OUTLET_MALL + "$4";
 
-	private static final Pattern WELLAND_ = Pattern.compile("((^|\\W){1}(" //
+	private static final Pattern WELLAND_ = Pattern.compile("((^|\\W)(" //
 			+ "welland" + "|" //
 			+ "wellan" //
-			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String WELLAND_REPLACEMENT = "$2" + WELLAND + "$4";
 
-	private static final Pattern NOTL_ = Pattern.compile("((^|\\W){1}(" //
+	private static final Pattern NOTL_ = Pattern.compile("((^|\\W)(" //
 			+ "notl"
-			+ ")(\\W|$){1})", Pattern.CASE_INSENSITIVE);
+			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String NOTL_REPLACEMENT_ = "$2" + "NOTL" + "$4";
 
 	@Override
@@ -352,6 +351,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			if (Arrays.asList( //
 					A_ + WELLAND_CAMPUS, //
 					WELLAND_CAMPUS, //
+					"Welland Bus Terminal", //
 					WELLAND //
 					).containsAll(headsignsValues)) {
 				mTrip.setHeadsignString(WELLAND, mTrip.getHeadsignId());
