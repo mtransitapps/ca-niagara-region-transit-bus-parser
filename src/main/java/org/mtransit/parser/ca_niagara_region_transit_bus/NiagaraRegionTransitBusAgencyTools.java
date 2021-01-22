@@ -198,13 +198,13 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 				1, MTrip.HEADSIGN_TYPE_STRING, "Welland") //
 				.addTripSort(0, //
 						Arrays.asList( //
-							"3733", // "WEL", // Welland Bus Terminal
+							"3733", // "WEL", // Welland Bus Term
 							"3734" // "13006" // Port Colborne City Hall
 						)) //
 				.addTripSort(1, //
 						Arrays.asList( //
 								"3734", // "13006", // Port Colborne City Hall
-								"3733" // "WEL" // Welland Bus Terminal
+								"3733" // "WEL" // Welland Bus Term
 						)) //
 				.compileBothTripSort());
 		ALL_ROUTE_TRIPS2 = map2;
@@ -351,7 +351,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			if (Arrays.asList( //
 					A_ + WELLAND_CAMPUS, //
 					WELLAND_CAMPUS, //
-					"Welland Bus Terminal", //
+					"Welland Bus Term", //
 					WELLAND //
 					).containsAll(headsignsValues)) {
 				mTrip.setHeadsignString(WELLAND, mTrip.getHeadsignId());
