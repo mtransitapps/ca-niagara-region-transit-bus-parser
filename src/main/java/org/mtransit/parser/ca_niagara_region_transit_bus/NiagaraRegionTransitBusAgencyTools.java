@@ -5,9 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import org.mtransit.parser.CleanUtils;
 import org.mtransit.parser.DefaultAgencyTools;
 import org.mtransit.parser.MTLog;
-import org.mtransit.parser.Pair;
-import org.mtransit.parser.SplitUtils;
-import org.mtransit.parser.SplitUtils.RouteTripSpec;
 import org.mtransit.parser.Utils;
 import org.mtransit.parser.gtfs.data.GCalendar;
 import org.mtransit.parser.gtfs.data.GCalendarDate;
@@ -15,17 +12,11 @@ import org.mtransit.parser.gtfs.data.GRoute;
 import org.mtransit.parser.gtfs.data.GSpec;
 import org.mtransit.parser.gtfs.data.GStop;
 import org.mtransit.parser.gtfs.data.GTrip;
-import org.mtransit.parser.gtfs.data.GTripStop;
 import org.mtransit.parser.mt.data.MAgency;
 import org.mtransit.parser.mt.data.MRoute;
 import org.mtransit.parser.mt.data.MTrip;
-import org.mtransit.parser.mt.data.MTripStop;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -192,41 +183,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		throw new MTLog.Fatal("Unexpected route color for %s!", gRoute);
 	}
 
-	private static final String SPACE = " ";
-
-	private static final String A_ = "A ";
-
-	private static final String NIAGARA = "Niagara";
-	private static final String NIAGARA_COLLEGE = NIAGARA + " College";
-	private static final String NIAGARA_FALLS = NIAGARA + " Falls";
-	private static final String NOTL_CAMPUS = "NOTL Campus";
-	private static final String OUTLET_MALL = "Outlet Mall";
-	private static final String ST_CATHARINES = "St Catharines";
-	private static final String WELLAND = "Welland";
-	private static final String WELLAND_CAMPUS = WELLAND + " Campus";
-
-	private static final HashMap<Long, RouteTripSpec> ALL_ROUTE_TRIPS2;
-
-	static {
-		HashMap<Long, RouteTripSpec> map2 = new HashMap<>();
-		//noinspection deprecation
-		map2.put(25L, new RouteTripSpec(25L, // SPLITTED BECAUSE same trip head-sign for different direction
-				0, MTrip.HEADSIGN_TYPE_STRING, "Port Colborne", //
-				1, MTrip.HEADSIGN_TYPE_STRING, "Welland") //
-				.addTripSort(0, //
-						Arrays.asList( //
-								"3733", // "WEL", // Welland Bus Term
-								"3734" // "13006" // Port Colborne City Hall
-						)) //
-				.addTripSort(1, //
-						Arrays.asList( //
-								"3734", // "13006", // Port Colborne City Hall
-								"3733" // "WEL" // Welland Bus Term
-						)) //
-				.compileBothTripSort());
-		ALL_ROUTE_TRIPS2 = map2;
-	}
-
 	private static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
 			"((^)((allnrt|nrt|)_([a-z]{1,3})?[\\d]{2,4}(_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
 			Pattern.CASE_INSENSITIVE);
@@ -239,40 +195,16 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	}
 
 	@Override
-	public int compareEarly(long routeId, @NotNull List<MTripStop> list1, @NotNull List<MTripStop> list2, @NotNull MTripStop ts1, @NotNull MTripStop ts2, @NotNull GStop ts1GStop, @NotNull GStop ts2GStop) {
-		if (ALL_ROUTE_TRIPS2.containsKey(routeId)) {
-			return ALL_ROUTE_TRIPS2.get(routeId).compare(routeId, list1, list2, ts1, ts2, ts1GStop, ts2GStop, this);
-		}
-		return super.compareEarly(routeId, list1, list2, ts1, ts2, ts1GStop, ts2GStop);
-	}
-
-	@NotNull
-	@Override
-	public ArrayList<MTrip> splitTrip(@NotNull MRoute mRoute, @Nullable GTrip gTrip, @NotNull GSpec gtfs) {
-		if (ALL_ROUTE_TRIPS2.containsKey(mRoute.getId())) {
-			return ALL_ROUTE_TRIPS2.get(mRoute.getId()).getAllTrips();
-		}
-		return super.splitTrip(mRoute, gTrip, gtfs);
-	}
-
-	@NotNull
-	@Override
-	public Pair<Long[], Integer[]> splitTripStop(@NotNull MRoute mRoute, @NotNull GTrip gTrip, @NotNull GTripStop gTripStop, @NotNull ArrayList<MTrip> splitTrips, @NotNull GSpec routeGTFS) {
-		if (ALL_ROUTE_TRIPS2.containsKey(mRoute.getId())) {
-			return SplitUtils.splitTripStop(mRoute, gTrip, gTripStop, routeGTFS, ALL_ROUTE_TRIPS2.get(mRoute.getId()), this);
-		}
-		return super.splitTripStop(mRoute, gTrip, gTripStop, splitTrips, routeGTFS);
-	}
-
-	@Override
 	public void setTripHeadsign(@NotNull MRoute mRoute, @NotNull MTrip mTrip, @NotNull GTrip gTrip, @NotNull GSpec gtfs) {
-		if (ALL_ROUTE_TRIPS2.containsKey(mRoute.getId())) {
-			return; // split
-		}
 		mTrip.setHeadsignString(
 				cleanTripHeadsign(gTrip.getTripHeadsignOrDefault()),
 				gTrip.getDirectionIdOrDefault()
 		);
+	}
+
+	@Override
+	public boolean directionFinderEnabled() {
+		return true;
 	}
 
 	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^)[\\d]{2}([a-z] | ))", Pattern.CASE_INSENSITIVE);
@@ -280,6 +212,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	private static final Pattern IMT_ = Pattern.compile("((^|\\W)(imt -|imt)(\\W|$))", Pattern.CASE_INSENSITIVE); // Inter-Municipal Transit
 
+	private static final String ST_CATHARINES = "St Catharines";
 	private static final Pattern ST_CATHARINES_ = Pattern.compile("((^|\\W)(" //
 			+ "st\\. catharines" + "|" //
 			+ "st\\. catharine" + "|" //
@@ -295,6 +228,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String ST_CATHARINES_REPLACEMENT = "$2" + ST_CATHARINES + "$4";
 
+	private static final String NIAGARA_FALLS = "Niagara Falls";
 	private static final Pattern NIAGARA_FALLS_ = Pattern.compile("((^|\\W)(" //
 			+ "niagara falls" + "|" //
 			+ "niagara fall" + "|" //
@@ -304,12 +238,14 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String NIAGARA_FALLS_REPLACEMENT = "$2" + NIAGARA_FALLS + "$4";
 
+	private static final String OUTLET_MALL = "Outlet Mall";
 	private static final Pattern OUTLET_MALL_ = Pattern.compile("((^|\\W)(" //
 			+ "outlet mall" + "|" //
 			+ "outlet m" //
 			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String OUTLET_MALL_REPLACEMENT = "$2" + OUTLET_MALL + "$4";
 
+	private static final String WELLAND = "Welland";
 	private static final Pattern WELLAND_ = Pattern.compile("((^|\\W)(" //
 			+ "welland" + "|" //
 			+ "wellan" //
@@ -345,52 +281,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@Override
 	public boolean mergeHeadsign(@NotNull MTrip mTrip, @NotNull MTrip mTripToMerge) {
-		List<String> headsignsValues = Arrays.asList(mTrip.getHeadsignValue(), mTripToMerge.getHeadsignValue());
-		if (mTrip.getRouteId() == 40L) {
-			if (Arrays.asList( //
-					A_ + NIAGARA_COLLEGE + SPACE + NOTL_CAMPUS, //
-					ST_CATHARINES //
-			).containsAll(headsignsValues)) {
-				mTrip.setHeadsignString(ST_CATHARINES, mTrip.getHeadsignId());
-				return true;
-			}
-			if (Arrays.asList( //
-					"A-" + NOTL_CAMPUS, //
-					"B-" + ST_CATHARINES, //
-					ST_CATHARINES //
-			).containsAll(headsignsValues)) {
-				mTrip.setHeadsignString(ST_CATHARINES, mTrip.getHeadsignId());
-				return true;
-			}
-		} else if (mTrip.getRouteId() == 45L) {
-			if (Arrays.asList( //
-					A_ + NIAGARA_FALLS, //
-					"A-" + NIAGARA_FALLS, //
-					"B-" + NOTL_CAMPUS, //
-					NIAGARA_FALLS //
-			).containsAll(headsignsValues)) {
-				mTrip.setHeadsignString(NIAGARA_FALLS, mTrip.getHeadsignId());
-				return true;
-			}
-		} else if (mTrip.getRouteId() == 60L) {
-			if (Arrays.asList( //
-					A_ + WELLAND_CAMPUS, //
-					WELLAND_CAMPUS, //
-					"Welland Bus Term", //
-					WELLAND //
-			).containsAll(headsignsValues)) {
-				mTrip.setHeadsignString(WELLAND, mTrip.getHeadsignId());
-				return true;
-			}
-		} else if (mTrip.getRouteId() == 65L) {
-			if (Arrays.asList( //
-					A_ + NIAGARA_FALLS, //
-					NIAGARA_FALLS //
-			).containsAll(headsignsValues)) {
-				mTrip.setHeadsignString(NIAGARA_FALLS, mTrip.getHeadsignId());
-				return true;
-			}
-		}
 		throw new MTLog.Fatal("Unexpected trips to merge %s & %s!", mTrip, mTripToMerge);
 	}
 
