@@ -1,81 +1,39 @@
 package org.mtransit.parser.ca_niagara_region_transit_bus;
 
+import static org.mtransit.commons.StringUtils.EMPTY;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mtransit.parser.CleanUtils;
+import org.mtransit.commons.CharUtils;
+import org.mtransit.commons.CleanUtils;
 import org.mtransit.parser.DefaultAgencyTools;
 import org.mtransit.parser.MTLog;
-import org.mtransit.parser.Utils;
-import org.mtransit.parser.gtfs.data.GCalendar;
-import org.mtransit.parser.gtfs.data.GCalendarDate;
 import org.mtransit.parser.gtfs.data.GRoute;
-import org.mtransit.parser.gtfs.data.GSpec;
 import org.mtransit.parser.gtfs.data.GStop;
-import org.mtransit.parser.gtfs.data.GTrip;
 import org.mtransit.parser.mt.data.MAgency;
-import org.mtransit.parser.mt.data.MRoute;
-import org.mtransit.parser.mt.data.MTrip;
 
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.mtransit.parser.StringUtils.EMPTY;
-
 // http://www.niagararegion.ca/government/opendata/data-set.aspx#id=32
 // https://maps.niagararegion.ca/googletransit/NiagaraRegionTransit.zip
+// https://niagaraopendata.ca/dataset/1a1b885e-1a86-415d-99aa-6803a2d8f178/resource/52c8cd46-d976-4d57-990f-e8018bcd27cb/download/gtfs.zip
 public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
-	public static void main(@Nullable String[] args) {
-		if (args == null || args.length == 0) {
-			args = new String[3];
-			args[0] = "input/gtfs.zip";
-			args[1] = "../../mtransitapps/ca-niagara-region-transit-bus-android/res/raw/";
-			args[2] = ""; // files-prefix
-		}
+	public static void main(@NotNull String[] args) {
 		new NiagaraRegionTransitBusAgencyTools().start(args);
 	}
 
-	@Nullable
-	private HashSet<Integer> serviceIdInts;
-
 	@Override
-	public void start(@NotNull String[] args) {
-		MTLog.log("Generating Niagara Region Transit bus data...");
-		long start = System.currentTimeMillis();
-		this.serviceIdInts = extractUsefulServiceIdInts(args, this, true);
-		super.start(args);
-		MTLog.log("Generating Niagara Region Transit bus data... DONE in %s.", Utils.getPrettyDuration(System.currentTimeMillis() - start));
+	public boolean defaultExcludeEnabled() {
+		return true;
 	}
 
+	@NotNull
 	@Override
-	public boolean excludingAll() {
-		return this.serviceIdInts != null && this.serviceIdInts.isEmpty();
-	}
-
-	@Override
-	public boolean excludeCalendar(@NotNull GCalendar gCalendar) {
-		if (this.serviceIdInts != null) {
-			return excludeUselessCalendarInt(gCalendar, this.serviceIdInts);
-		}
-		return super.excludeCalendar(gCalendar);
-	}
-
-	@Override
-	public boolean excludeCalendarDate(@NotNull GCalendarDate gCalendarDates) {
-		if (this.serviceIdInts != null) {
-			return excludeUselessCalendarDateInt(gCalendarDates, this.serviceIdInts);
-		}
-		return super.excludeCalendarDate(gCalendarDates);
-	}
-
-	@Override
-	public boolean excludeTrip(@NotNull GTrip gTrip) {
-		if (this.serviceIdInts != null) {
-			return excludeUselessTripInt(gTrip, this.serviceIdInts);
-		}
-		return super.excludeTrip(gTrip);
+	public String getAgencyName() {
+		return "Niagara Region Transit";
 	}
 
 	private static final String NIAGARA_REGION_TRANSIT = "Niagara Region Transit";
@@ -87,22 +45,23 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		//noinspection deprecation
 		final String agencyId = gRoute.getAgencyIdOrDefault();
 		if (!agencyId.contains(NIAGARA_REGION_TRANSIT)
-				&& !agencyId.contains("AllNRT_")) {
-			return true; // excluded
+				&& !agencyId.contains("AllNRT_")
+				&& !agencyId.equals("1")) {
+			return EXCLUDE;
 		}
-		if (agencyId.contains("AllNRT_")) {
-			if (!Utils.isDigitsOnly(gRoute.getRouteShortName())) {
+		if (agencyId.contains("AllNRT_") || agencyId.equals("1")) {
+			if (!CharUtils.isDigitsOnly(gRoute.getRouteShortName())) {
 				return true; // exclude
 			}
 			final int rsn = Integer.parseInt(gRoute.getRouteShortName());
 			if (rsn > 100) {
-				return true; // exclude
+				return EXCLUDE;
 			}
 		}
 		//noinspection deprecation
 		final String routeId = gRoute.getRouteId();
 		if (routeId.startsWith(EXCLUDE_STC_ROUTE_IDS_STARTS_WITH)) {
-			return true; // excluded
+			return EXCLUDE;
 		}
 		return super.excludeRoute(gRoute);
 	}
@@ -120,7 +79,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@Override
 	public long getRouteId(@NotNull GRoute gRoute) {
 		if (gRoute.getRouteShortName().length() > 0
-				&& Utils.isDigitsOnly(gRoute.getRouteShortName())) {
+				&& CharUtils.isDigitsOnly(gRoute.getRouteShortName())) {
 			return Long.parseLong(gRoute.getRouteShortName());
 		}
 		//noinspection deprecation
@@ -192,14 +151,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	public String cleanStopOriginalId(@NotNull String gStopId) {
 		gStopId = STARTS_WITH_NRT_A00_.matcher(gStopId).replaceAll(EMPTY);
 		return gStopId;
-	}
-
-	@Override
-	public void setTripHeadsign(@NotNull MRoute mRoute, @NotNull MTrip mTrip, @NotNull GTrip gTrip, @NotNull GSpec gtfs) {
-		mTrip.setHeadsignString(
-				cleanTripHeadsign(gTrip.getTripHeadsignOrDefault()),
-				gTrip.getDirectionIdOrDefault()
-		);
 	}
 
 	@Override
@@ -279,11 +230,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return CleanUtils.cleanLabel(tripHeadsign);
 	}
 
-	@Override
-	public boolean mergeHeadsign(@NotNull MTrip mTrip, @NotNull MTrip mTripToMerge) {
-		throw new MTLog.Fatal("Unexpected trips to merge %s & %s!", mTrip, mTripToMerge);
-	}
-
 	private String[] getIgnoredWords() {
 		return new String[]{
 				"NE", "NW", "SE", "SW",
@@ -326,7 +272,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			if (stopId.isEmpty()) {
 				throw new MTLog.Fatal("Unexpected stop ID (%d) %s!", stopId, gStop.toStringPlus());
 			}
-			if (Utils.isDigitsOnly(stopId)) {
+			if (CharUtils.isDigitsOnly(stopId)) {
 				return Integer.parseInt(stopId);
 			}
 			throw new MTLog.Fatal("Unexpected stop ID %s!", gStop.toStringPlus());
@@ -339,7 +285,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		if (stopCode.isEmpty()) {
 			throw new MTLog.Fatal("Unexpected empty stop ID %s!", gStop.toStringPlus());
 		}
-		if (Utils.isDigitsOnly(stopCode)) {
+		if (CharUtils.isDigitsOnly(stopCode)) {
 			return Integer.parseInt(stopCode); // using stop code as stop ID
 		}
 		switch (stopCode) {
