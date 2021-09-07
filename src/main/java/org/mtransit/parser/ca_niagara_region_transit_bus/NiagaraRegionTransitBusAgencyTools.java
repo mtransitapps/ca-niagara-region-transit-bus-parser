@@ -130,7 +130,6 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return true;
 	}
 
-
 	@NotNull
 	@Override
 	public String getAgencyColor() {
