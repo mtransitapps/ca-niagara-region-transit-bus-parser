@@ -6,8 +6,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mtransit.commons.CharUtils;
 import org.mtransit.commons.CleanUtils;
+import org.mtransit.commons.StringUtils;
 import org.mtransit.parser.DefaultAgencyTools;
 import org.mtransit.parser.MTLog;
+import org.mtransit.parser.gtfs.data.GAgency;
 import org.mtransit.parser.gtfs.data.GRoute;
 import org.mtransit.parser.gtfs.data.GStop;
 import org.mtransit.parser.mt.data.MAgency;
@@ -16,9 +18,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// http://www.niagararegion.ca/government/opendata/data-set.aspx#id=32
+// https://niagaraopendata.ca/dataset/niagara-region-transit-gtfs
 // https://maps.niagararegion.ca/googletransit/NiagaraRegionTransit.zip
-// https://niagaraopendata.ca/dataset/1a1b885e-1a86-415d-99aa-6803a2d8f178/resource/52c8cd46-d976-4d57-990f-e8018bcd27cb/download/gtfs.zip
+// https://niagaraopendata.ca/dataset/1a1b885e-1a86-415d-99aa-6803a2d8f178/resource/f7dbcaed-f31a-435e-8146-b0efff0b8eb8/download/gtfs.zip
 public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	public static void main(@NotNull String[] args) {
@@ -39,6 +41,18 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	private static final String NIAGARA_REGION_TRANSIT = "Niagara Region Transit";
 
 	private static final String EXCLUDE_STC_ROUTE_IDS_STARTS_WITH = "STC_";
+
+	@Override
+	public boolean excludeAgency(@NotNull GAgency gAgency) {
+		//noinspection deprecation
+		final String agencyId = gAgency.getAgencyId();
+		if (!agencyId.contains(NIAGARA_REGION_TRANSIT)
+				&& !agencyId.contains("AllNRT_")
+				&& !agencyId.equals("1")) {
+			return EXCLUDE;
+		}
+		return super.excludeAgency(gAgency);
+	}
 
 	@Override
 	public boolean excludeRoute(@NotNull GRoute gRoute) {
@@ -111,6 +125,12 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	private static final String AGENCY_COLOR = AGENCY_COLOR_GREEN;
 
+	@Override
+	public boolean defaultAgencyColorEnabled() {
+		return true;
+	}
+
+
 	@NotNull
 	@Override
 	public String getAgencyColor() {
@@ -121,25 +141,28 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@Nullable
 	@Override
 	public String getRouteColor(@NotNull GRoute gRoute) {
-		Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
-		if (matcher.find()) {
-			int id = Integer.parseInt(matcher.group());
-			switch (id) {
-			// @formatter:off
-			case 22: return "766A24";
-			case 25: return "00AAA0"; // Welland Transit?
-			case 40: return "1B5C28";
-			case 45: return "1B5C28";
-			case 50: return "F1471C";
-			case 55: return "F1471C";
-			case 60: return "1378C7";
-			case 65: return "1378C7";
-			case 70: return "62B92C";
-			case 75: return "62B92C";
-			// @formatter:on
+		if (StringUtils.isEmpty(gRoute.getRouteColor())) {
+			final Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
+			if (matcher.find()) {
+				final int id = Integer.parseInt(matcher.group());
+				switch (id) {
+				// @formatter:off
+				case 22: return "766A24";
+				case 25: return "00AAA0"; // Welland Transit?
+				case 40: return "1B5C28";
+				case 45: return "1B5C28";
+				case 50: return "F1471C";
+				case 55: return "F1471C";
+				case 60: return "1378C7";
+				case 65: return "1378C7";
+				case 70: return "62B92C";
+				case 75: return "62B92C";
+				// @formatter:on
+				}
 			}
+			throw new MTLog.Fatal("Unexpected route color for %s!", gRoute);
 		}
-		throw new MTLog.Fatal("Unexpected route color for %s!", gRoute);
+		return super.getRouteColor(gRoute);
 	}
 
 	private static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
