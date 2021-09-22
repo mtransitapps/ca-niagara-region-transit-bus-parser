@@ -1,12 +1,12 @@
 package org.mtransit.parser.ca_niagara_region_transit_bus;
 
+import static org.mtransit.commons.RegexUtils.DIGITS;
 import static org.mtransit.commons.StringUtils.EMPTY;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mtransit.commons.CharUtils;
 import org.mtransit.commons.CleanUtils;
-import org.mtransit.commons.StringUtils;
 import org.mtransit.parser.DefaultAgencyTools;
 import org.mtransit.parser.MTLog;
 import org.mtransit.parser.gtfs.data.GAgency;
@@ -14,6 +14,7 @@ import org.mtransit.parser.gtfs.data.GRoute;
 import org.mtransit.parser.gtfs.data.GStop;
 import org.mtransit.parser.mt.data.MAgency;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,6 +26,12 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	public static void main(@NotNull String[] args) {
 		new NiagaraRegionTransitBusAgencyTools().start(args);
+	}
+
+	@Nullable
+	@Override
+	public List<Locale> getSupportedLanguages() {
+		return LANG_EN;
 	}
 
 	@Override
@@ -86,25 +93,19 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return MAgency.ROUTE_TYPE_BUS;
 	}
 
-	private static final String A = "A";
-
-	private static final Pattern DIGITS = Pattern.compile("[\\d]+");
+	@Override
+	public boolean defaultRouteIdEnabled() {
+		return true;
+	}
 
 	@Override
-	public long getRouteId(@NotNull GRoute gRoute) {
-		if (gRoute.getRouteShortName().length() > 0
-				&& CharUtils.isDigitsOnly(gRoute.getRouteShortName())) {
-			return Long.parseLong(gRoute.getRouteShortName());
-		}
-		//noinspection deprecation
-		Matcher matcher = DIGITS.matcher(gRoute.getRouteId());
-		if (matcher.find()) {
-			long id = Long.parseLong(matcher.group());
-			if (gRoute.getRouteShortName().endsWith(A)) {
-				return 10_000L + id;
-			}
-		}
-		throw new MTLog.Fatal("Unexpected route ID for %s!", gRoute);
+	public boolean useRouteShortNameForRouteId() {
+		return true;
+	}
+
+	@Override
+	public boolean defaultRouteLongNameEnabled() {
+		return true;
 	}
 
 	private static final Pattern STARTS_WITH_CT = Pattern.compile("(^(NRT - ))", Pattern.CASE_INSENSITIVE);
@@ -112,8 +113,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 
 	@NotNull
 	@Override
-	public String getRouteLongName(@NotNull GRoute gRoute) {
-		String routeLongName = gRoute.getRouteLongNameOrDefault();
+	public String cleanRouteLongName(@NotNull String routeLongName) {
 		routeLongName = STARTS_WITH_CT.matcher(routeLongName).replaceAll(EMPTY);
 		routeLongName = ENDS_WITH_CT.matcher(routeLongName).replaceAll(EMPTY);
 		//noinspection deprecation
@@ -139,29 +139,26 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	@SuppressWarnings("DuplicateBranchesInSwitch")
 	@Nullable
 	@Override
-	public String getRouteColor(@NotNull GRoute gRoute) {
-		if (StringUtils.isEmpty(gRoute.getRouteColor())) {
-			final Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
-			if (matcher.find()) {
-				final int id = Integer.parseInt(matcher.group());
-				switch (id) {
-				// @formatter:off
-				case 22: return "766A24";
-				case 25: return "00AAA0"; // Welland Transit?
-				case 40: return "1B5C28";
-				case 45: return "1B5C28";
-				case 50: return "F1471C";
-				case 55: return "F1471C";
-				case 60: return "1378C7";
-				case 65: return "1378C7";
-				case 70: return "62B92C";
-				case 75: return "62B92C";
-				// @formatter:on
-				}
+	public String provideMissingRouteColor(@NotNull GRoute gRoute) {
+		final Matcher matcher = DIGITS.matcher(gRoute.getRouteShortName());
+		if (matcher.find()) {
+			final int rsn = Integer.parseInt(matcher.group());
+			switch (rsn) {
+			// @formatter:off
+			case 22: return "766A24";
+			case 25: return "00AAA0"; // Welland Transit?
+			case 40: return "1B5C28";
+			case 45: return "1B5C28";
+			case 50: return "F1471C";
+			case 55: return "F1471C";
+			case 60: return "1378C7";
+			case 65: return "1378C7";
+			case 70: return "62B92C";
+			case 75: return "62B92C";
+			// @formatter:on
 			}
-			throw new MTLog.Fatal("Unexpected route color for %s!", gRoute);
 		}
-		return super.getRouteColor(gRoute);
+		throw new MTLog.Fatal("Unexpected route color for %s!", gRoute);
 	}
 
 	private static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
