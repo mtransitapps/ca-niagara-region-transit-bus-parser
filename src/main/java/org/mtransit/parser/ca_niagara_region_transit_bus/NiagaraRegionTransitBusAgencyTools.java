@@ -70,7 +70,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		}
 		if (agencyId.contains("AllNRT_") || agencyId.equals("1")) {
 			if (!CharUtils.isDigitsOnly(gRoute.getRouteShortName())) {
-				return true; // exclude
+				return EXCLUDE;
 			}
 			final int rsn = Integer.parseInt(gRoute.getRouteShortName());
 			if (rsn > 100) {
@@ -160,7 +160,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 	}
 
 	private static final Pattern STARTS_WITH_NRT_A00_ = Pattern.compile( //
-			"((^)((allnrt|nrt|)_([a-z]{1,3})?[\\d]{2,4}(_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
+			"((^)((allnrt|nrt|)_([a-z]{1,3})?\\d{2,4}(_)?([A-Z]{3}(stop))?(stop)?)(NFT)?)", //
 			Pattern.CASE_INSENSITIVE);
 
 	@NotNull
@@ -175,7 +175,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 		return true;
 	}
 
-	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^)[\\d]{2}([a-z] | ))", Pattern.CASE_INSENSITIVE);
+	private static final Pattern STARTS_WITH_RSN = Pattern.compile("((^)\\d{2}([a-z] | ))", Pattern.CASE_INSENSITIVE);
 	private static final String STARTS_WITH_RSN_REPLACEMENT = "$3";
 
 	private static final Pattern IMT_ = Pattern.compile("((^|\\W)(imt -|imt)(\\W|$))", Pattern.CASE_INSENSITIVE); // Inter-Municipal Transit
@@ -225,7 +225,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			+ ")(\\W|$))", Pattern.CASE_INSENSITIVE);
 	private static final String NOTL_REPLACEMENT_ = "$2" + "NOTL" + "$4";
 
-	private static final Pattern AND_NO_SPACE = Pattern.compile("(([\\S])\\s?([&@])\\s?([\\S]))", Pattern.CASE_INSENSITIVE);
+	private static final Pattern AND_NO_SPACE = Pattern.compile("((\\S)\\s?([&@])\\s?(\\S))", Pattern.CASE_INSENSITIVE);
 	private static final String AND_NO_SPACE_REPLACEMENT = "$2 $3 $4";
 
 	@NotNull
@@ -295,7 +295,7 @@ public class NiagaraRegionTransitBusAgencyTools extends DefaultAgencyTools {
 			throw new MTLog.Fatal("Unexpected stop ID %s!", gStop.toStringPlus());
 		}
 		String stopCode = gStop.getStopCode();
-		if (stopCode == null || stopCode.length() == 0 || ZERO_0.equals(stopCode)) {
+		if (stopCode == null || stopCode.isEmpty() || ZERO_0.equals(stopCode)) {
 			stopCode = stopId1;
 		}
 		stopCode = STARTS_WITH_NRT_A00_.matcher(stopCode).replaceAll(EMPTY);
